@@ -16,7 +16,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=int, default=-1)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--hf_cache_dir", type=str, default=None)
-    parser.add_argument("--ip_scale", type=float, default=0.5)
+    parser.add_argument("--ip_scale", type=float, default=0.7)
     parser.add_argument("--data_lim", type=int, default=-1)
     parser.add_argument("--prompt", type=str, default="")
     parser.add_argument("--out_name", type=str, default="out")
@@ -57,22 +57,9 @@ if __name__ == "__main__":
         torch_dtype=torch.float16,
         cache_dir=args.hf_cache_dir
     )
-    '''
-    controlnet = ControlNetModel.from_pretrained(
-        "diffusers/controlnet-canny-sdxl-1.0",
-        torch_dtype=torch.float16
-    ).to(device)
-
-    vae = AutoencoderKL.from_pretrained(
-        "madebyollin/sdxl-vae-fp16-fix",
-        torch_dtype=torch.float16
-    ).to(device)
-    '''
+    
     pipe_ip_control = AutoPipelineForText2Image.from_pretrained(
         "stabilityai/stable-diffusion-xl-base-1.0",
-        # controlnet=controlnet,
-        # controlnet_conditioning_scale = 0.4,
-        # vae=vae,
         image_encoder=image_encoder,
         torch_dtype=torch.float16,
         cache_dir=args.hf_cache_dir
@@ -84,7 +71,6 @@ if __name__ == "__main__":
                                 "ip-adapter-plus_sdxl_vit-h.safetensors"
                             ],
                             cache_dir=args.hf_cache_dir)
-
     generator1 = torch.Generator(device="cuda").manual_seed(args.seed)
 
     cur_out_path = os.path.join(args.out_path, f"{args.out_name}_no_imageRAG.png")
@@ -100,15 +86,13 @@ if __name__ == "__main__":
         ip_image = Image.open(bird_image_path).convert("RGB")
         control_image = Image.open(car_image_path).convert("RGB")
 
-        pipe_ip_control.set_ip_adapter_scale([args.ip_scale/2]*2)
+        pipe_ip_control.set_ip_adapter_scale([0.35, 0.35])
 
         out_image = pipe_ip_control(
             prompt=args.prompt,
             ip_adapter_image=[ip_image, control_image],
             negative_prompt="monochrome, lowres, bad anatomy, worst quality, low quality",
             num_inference_steps=50,
-            #num_inference_steps=28
-            #guidance_scale=6.5,
             generator=generator1,
         ).images[0]
 
