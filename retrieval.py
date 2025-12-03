@@ -242,10 +242,11 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "datasets/bird"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "datasets/car"))
 
-from search_bird import BirdSearchEngine, get_clip_model as get_bird_clip_model
-from search_car import CarSearchEngine, get_clip_model as get_car_clip_model
-import search_bird
-import search_car
+# 用別名 import 避免和下面的函數名衝突
+import search_bird as search_bird_module
+import search_car as search_car_module
+from search_bird import BirdSearchEngine
+from search_car import CarSearchEngine
 
 # 全域快取
 _bird_engine = None
@@ -274,10 +275,10 @@ def init_faiss_retrieval(bird_index_dir=None, car_index_dir=None, device='cuda')
         _bird_engine = BirdSearchEngine(index_dir=bird_index_dir, device=device)
         
         # 把 Bird 的模型快取分享給 Car (避免重複載入)
-        search_car._cached_model = search_bird._cached_model
-        search_car._cached_preprocess = search_bird._cached_preprocess
-        search_car._cached_tokenizer = search_bird._cached_tokenizer
-        search_car._cached_device = search_bird._cached_device
+        search_car_module._cached_model = search_bird_module._cached_model
+        search_car_module._cached_preprocess = search_bird_module._cached_preprocess
+        search_car_module._cached_tokenizer = search_bird_module._cached_tokenizer
+        search_car_module._cached_device = search_bird_module._cached_device
     
     if car_index_dir:
         _car_engine = CarSearchEngine(index_dir=car_index_dir, device=device)
