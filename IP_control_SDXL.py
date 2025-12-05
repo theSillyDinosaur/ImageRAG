@@ -12,6 +12,7 @@ from retrieval import init_faiss_retrieval, search_bird_image_path, search_car_i
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="imageRAG pipeline")
+    parser.add_argument("--openai_api_key", type=str)
     parser.add_argument("--dataset", type=str)
     parser.add_argument("--device", type=int, default=-1)
     parser.add_argument("--seed", type=int, default=0)
@@ -29,6 +30,10 @@ if __name__ == "__main__":
     parser.add_argument("--car_index_dir", type=str, default="datasets/car/index", help="Car FAISS index 目錄")
 
     args = parser.parse_args()
+    
+    openai.api_key = args.openai_api_key
+    os.environ["OPENAI_API_KEY"] = openai.api_key
+    client = openai.OpenAI()
 
     os.makedirs(args.out_path, exist_ok=True)
     out_txt_file = os.path.join(args.out_path, args.out_name + ".txt")
@@ -72,13 +77,18 @@ if __name__ == "__main__":
                             ],
                             cache_dir=args.hf_cache_dir)
     generator1 = torch.Generator(device="cuda").manual_seed(args.seed)
-
     cur_out_path = os.path.join(args.out_path, f"{args.out_name}_no_imageRAG.png")
     if not os.path.exists(cur_out_path):
+        # 使用 extract_keywords 解析關鍵字
+        keywords = extract_keywords(args.prompt, client)
+
+        # 解析 JSON 並存入變數
+        bird_keyword = keywords.get("bird", "")
+        car_keyword = keywords.get("car", "")
+        
         # 使用 FAISS 做Retrieval
-        # todo 未處理keyword提取，可能透過LLM提取關鍵字分成兩個Keyword
-        bird_image_path = search_bird_image_path(args.prompt, k=1, index_type="image")
-        car_image_path = search_car_image_path(args.prompt, k=1, index_type="combined")
+        bird_image_path = search_bird_image_path(bird_keyword, k=1, index_type="combined")
+        car_image_path = search_car_image_path(car_keyword, k=1, index_type="combined")
         
         print(f"🐦 Bird 搜尋結果: {bird_image_path}")
         print(f"🚗 Car 搜尋結果: {car_image_path}")
