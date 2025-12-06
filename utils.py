@@ -1,4 +1,6 @@
 import base64
+import json
+import os
 
 def convert_res_to_captions(res):
     captions = [c.strip() for c in res.split("\n") if c != ""]
@@ -125,3 +127,48 @@ def get_rephrased_prompt(prompt, gpt_client, image_paths=[], context_msgs=[], im
 
     ans = message_gpt(msg, gpt_client, image_paths, context_msgs=context_msgs, images_idx=images_idx)
     return ans.strip().replace('"', '').replace("'", '')
+
+# Prompt 檔案目錄
+PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
+
+def load_prompt(prompt_name):
+    """
+    從文字檔載入 prompt
+    
+    Args:
+        prompt_name: prompt 檔案名稱 (不含副檔名)
+    
+    Returns:
+        str: prompt 內容
+    """
+    prompt_path = os.path.join(PROMPTS_DIR, f"{prompt_name}.txt")
+    with open(prompt_path, "r", encoding="utf-8") as f:
+        return f.read().strip()
+
+def extract_keywords(prompt, client):
+    """
+    Extract bird and car keywords from user prompt
+    
+    Args:
+        prompt: User input prompt, e.g., "A penguin driving a Tesla"
+        client: OpenAI client
+    
+    Returns:
+        dict: {"bird": "penguin", "car": "Tesla"}
+    """
+    system_prompt = load_prompt("extract_keywords")
+
+    msg = f"Input: {prompt}\nOutput:"
+    
+    res = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": msg}
+        ],
+        response_format={"type": "json_object"},
+        temperature=0
+    )
+    
+    result = json.loads(res.choices[0].message.content)
+    return result

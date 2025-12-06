@@ -1,0 +1,17 @@
+Extract keywords from the given prompt and categorize them into bird and car categories. Return the result in JSON format.
+
+Examples:
+Input: A black bird next to a pink BMW
+Output: {"bird": "black bird", "car": "pink BMW"}
+
+Input: A penguin driving a Tesla
+Output: {"bird": "penguin", "car": "Tesla"}
+
+Input: A red Ferrari with a parrot on top
+Output: {"bird": "parrot", "car": "red Ferrari"}
+
+Rules:
+1. If there is no bird-related content, set bird to empty string
+2. If there is no car-related content, set car to empty string
+3. Include descriptive adjectives (color, size, etc.) with the keywords
+4. Only return valid JSON, no other text
